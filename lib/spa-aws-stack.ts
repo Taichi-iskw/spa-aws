@@ -4,10 +4,19 @@ import * as s3 from "aws-cdk-lib/aws-s3";
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as route53 from "aws-cdk-lib/aws-route53";
+import * as route53Targets from "aws-cdk-lib/aws-route53-targets";
+import * as acm from "aws-cdk-lib/aws-certificatemanager";
+
+interface SpaAwsStackProps extends cdk.StackProps {
+  hostedZone: route53.IHostedZone;
+  certificate: acm.ICertificate;
+}
 
 export class SpaAwsStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: SpaAwsStackProps) {
     super(scope, id, props);
+    const siteDomainName = "spa.iskw-poc.click";
 
     // Create a private S3 bucket for static website hosting
     const bucket = new s3.Bucket(this, "SpaAwsBucket", {
@@ -23,6 +32,8 @@ export class SpaAwsStack extends cdk.Stack {
 
     // Create CloudFront distribution with OAC
     const distribution = new cloudfront.Distribution(this, "SpaAwsDistribution", {
+      certificate: props.certificate,
+      domainNames: [siteDomainName],
       defaultRootObject: "index.html",
       defaultBehavior: {
         origin: s3Origin,
@@ -30,6 +41,12 @@ export class SpaAwsStack extends cdk.Stack {
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
       },
+    });
+
+    new route53.ARecord(this, "ARecord", {
+      zone: props.hostedZone,
+      target: route53.RecordTarget.fromAlias(new route53Targets.CloudFrontTarget(distribution)),
+      recordName: siteDomainName,
     });
 
     // Grant CloudFront access to the S3 bucket
@@ -47,12 +64,8 @@ export class SpaAwsStack extends cdk.Stack {
       })
     );
 
-    new cdk.CfnOutput(this, "DistributionDomainName", {
-      value: `https://${distribution.distributionDomainName}`,
-    });
-
-    new cdk.CfnOutput(this, "BucketName", {
-      value: bucket.bucketName,
+    new cdk.CfnOutput(this, "SpaUrl", {
+      value: `https://${siteDomainName}`,
     });
   }
 }
