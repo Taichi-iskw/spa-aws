@@ -3,7 +3,6 @@ import { Construct } from "constructs";
 import * as s3 from "aws-cdk-lib/aws-s3";
 import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
-import * as iam from "aws-cdk-lib/aws-iam";
 import * as route53 from "aws-cdk-lib/aws-route53";
 import * as route53Targets from "aws-cdk-lib/aws-route53-targets";
 import * as acm from "aws-cdk-lib/aws-certificatemanager";
@@ -48,21 +47,6 @@ export class SpaAwsStack extends cdk.Stack {
       target: route53.RecordTarget.fromAlias(new route53Targets.CloudFrontTarget(distribution)),
       recordName: siteDomainName,
     });
-
-    // Grant CloudFront access to the S3 bucket
-    bucket.addToResourcePolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        principals: [new iam.ServicePrincipal("cloudfront.amazonaws.com")],
-        actions: ["s3:GetObject"],
-        resources: [bucket.arnForObjects("*")],
-        conditions: {
-          StringEquals: {
-            "AWS:SourceArn": `arn:aws:cloudfront::${this.account}:distribution/${distribution.distributionId}`,
-          },
-        },
-      })
-    );
 
     new cdk.CfnOutput(this, "SpaUrl", {
       value: `https://${siteDomainName}`,
