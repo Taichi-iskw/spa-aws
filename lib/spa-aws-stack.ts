@@ -7,6 +7,8 @@ import * as route53 from "aws-cdk-lib/aws-route53";
 import * as route53Targets from "aws-cdk-lib/aws-route53-targets";
 import * as acm from "aws-cdk-lib/aws-certificatemanager";
 
+import { CognitoAuth } from "./constructs/auth-construct";
+
 interface SpaAwsStackProps extends cdk.StackProps {
   hostedZone: route53.IHostedZone;
   certificate: acm.ICertificate;
@@ -16,6 +18,10 @@ export class SpaAwsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: SpaAwsStackProps) {
     super(scope, id, props);
     const siteDomainName = "spa.iskw-poc.click";
+
+    const auth = new CognitoAuth(this, "CognitoAuth", {
+      domainName: siteDomainName,
+    });
 
     // Create a private S3 bucket for static website hosting
     const bucket = new s3.Bucket(this, "SpaAwsBucket", {
