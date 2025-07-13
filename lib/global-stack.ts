@@ -10,6 +10,7 @@ export class GlobalStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    // ROUTE 53, ACM
     const domainName = "iskw-poc.click";
     const siteDomainName = "spa.iskw-poc.click";
     this.hostedZone = route53.HostedZone.fromLookup(this, "HostedZone", { domainName });

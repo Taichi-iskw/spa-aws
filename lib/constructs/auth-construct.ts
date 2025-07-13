@@ -14,6 +14,8 @@ export class CognitoAuth extends Construct {
       userPoolName: "iskw-poc-user-pool",
       selfSignUpEnabled: true,
       signInAliases: { email: true },
+      // TODO: Remove this when we have a proper way to delete the user pool
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
     const appClient = userPool.addClient("WebClient", {

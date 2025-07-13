@@ -6,6 +6,7 @@ import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import * as route53 from "aws-cdk-lib/aws-route53";
 import * as route53Targets from "aws-cdk-lib/aws-route53-targets";
 import * as acm from "aws-cdk-lib/aws-certificatemanager";
+import * as lambda from "aws-cdk-lib/aws-lambda";
 
 import { CognitoAuth } from "./constructs/auth-construct";
 
@@ -45,6 +46,16 @@ export class SpaAwsStack extends cdk.Stack {
         allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+        edgeLambdas: [
+          {
+            functionVersion: new cloudfront.experimental.EdgeFunction(this, "EdgeFn", {
+              runtime: lambda.Runtime.NODEJS_20_X,
+              handler: "index.handler",
+              code: lambda.Code.fromAsset("lib/lambda/edge-auth"),
+            }).currentVersion,
+            eventType: cloudfront.LambdaEdgeEventType.VIEWER_REQUEST,
+          },
+        ],
       },
     });
 
