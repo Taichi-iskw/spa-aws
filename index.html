@@ -8,4 +8,15 @@
   <body>
     <h1>Hello World. from S3</h1>
   </body>
+  <script>
+    const hash = window.location.hash.substring(1); // '#id_token=...&access_token=...'
+    const params = new URLSearchParams(hash);
+
+    const idToken = params.get("id_token");
+    if (idToken) {
+      document.cookie = `id_token=${idToken}; path=/; Secure`;
+      // トークンを保存したらURLから削除してリロード
+      window.location.href = "/";
+    }
+  </script>
 </html>

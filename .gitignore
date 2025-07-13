@@ -6,3 +6,11 @@ node_modules
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+
+!/lib/lambda/edge-auth/index.js
+
+# .env 
+.env
+
+# dist
+dist

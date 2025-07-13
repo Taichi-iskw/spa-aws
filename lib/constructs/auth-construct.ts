@@ -26,7 +26,7 @@ export class CognitoAuth extends Construct {
         callbackUrls: [`https://${props.domainName}`],
         logoutUrls: [`https://${props.domainName}/logout`],
       },
-      generateSecret: true,
+      generateSecret: false,
       supportedIdentityProviders: [cognito.UserPoolClientIdentityProvider.COGNITO],
     });
 
@@ -34,8 +34,26 @@ export class CognitoAuth extends Construct {
       cognitoDomain: { domainPrefix: "iskw-poc-auth" },
     });
 
-    new cdk.CfnOutput(this, "CognitoDomain", {
-      value: domain.signInUrl(appClient, { redirectUri: `https://${props.domainName}` }),
-    });
+    // // Cognito Domain
+    // new cdk.CfnOutput(this, "CognitoDomain", {
+    //   description: "Cognito Domain",
+    //   exportName: "CognitoDomain",
+    //   value: domain.signInUrl(appClient, { redirectUri: `https://${props.domainName}` }),
+    // });
+    // new cdk.CfnOutput(this, "CognitoUserPoolId", {
+    //   description: "Cognito User Pool ID",
+    //   exportName: "CognitoUserPoolId",
+    //   value: userPool.userPoolId,
+    // });
+    // new cdk.CfnOutput(this, "CognitoUserPoolClientId", {
+    //   description: "Cognito User Pool Client ID",
+    //   exportName: "CognitoUserPoolAppId",
+    //   value: appClient.userPoolClientId,
+    // });
+    // new cdk.CfnOutput(this, "CognitoUserPoolDomain", {
+    //   description: "Cognito User Pool Domain",
+    //   exportName: "CognitoUserPoolDomain",
+    //   value: `${domain.domainName}.auth.${cdk.Stack.of(this).region}.amazoncognito.com`,
+    // });
   }
 }

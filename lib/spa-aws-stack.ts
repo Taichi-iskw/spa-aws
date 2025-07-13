@@ -46,16 +46,16 @@ export class SpaAwsStack extends cdk.Stack {
         allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
-        edgeLambdas: [
-          {
-            functionVersion: new cloudfront.experimental.EdgeFunction(this, "EdgeFn", {
-              runtime: lambda.Runtime.NODEJS_20_X,
-              handler: "index.handler",
-              code: lambda.Code.fromAsset("lib/lambda/edge-auth"),
-            }).currentVersion,
-            eventType: cloudfront.LambdaEdgeEventType.VIEWER_REQUEST,
-          },
-        ],
+        // edgeLambdas: [
+        //   {
+        //     functionVersion: new cloudfront.experimental.EdgeFunction(this, "EdgeFn", {
+        //       runtime: lambda.Runtime.NODEJS_20_X,
+        //       handler: "index.handler",
+        //       code: lambda.Code.fromAsset("lib/lambda/edge-auth/dist"),
+        //     }).currentVersion,
+        //     eventType: cloudfront.LambdaEdgeEventType.VIEWER_REQUEST,
+        //   },
+        // ],
       },
     });
 
