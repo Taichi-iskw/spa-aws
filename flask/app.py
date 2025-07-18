@@ -8,6 +8,11 @@ def index():
     return jsonify(message="flask root")
 
 
+@app.route("/api")
+def health_check():
+    return jsonify(message="api health check")
+
+
 @app.route("/api/hello")
 def hello():
     return jsonify(message="Hello from Flask on Fargate!")

@@ -9,5 +9,10 @@
   "hosted-zone:account=668429317101:domainName=iskw-poc.click:region=us-east-1": {
     "Id": "/hostedzone/Z07892501ETX53GJV3ZVX",
     "Name": "iskw-poc.click."
-  }
+  },
+  "availability-zones:account=668429317101:region=ap-northeast-1": [
+    "ap-northeast-1a",
+    "ap-northeast-1c",
+    "ap-northeast-1d"
+  ]
 }
