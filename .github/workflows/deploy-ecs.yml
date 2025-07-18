@@ -1,0 +1,57 @@
+# .github/workflows/deploy-ecs.yml
+name: Deploy to ECS (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write # OIDC 用
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-1
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  ECR_REPOSITORY: sample-flask-repo
+  CLUSTER_NAME: sample-flask-cluster
+  SERVICE_NAME: sample-flask-service
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/GitHubActionsFargateRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build & push Docker image (latest)
+        run: |
+          cd flask
+          # build for linux/amd64 on Mac
+          docker build --platform linux/amd64 -t ${{ env.ECR_REPOSITORY }}:latest .
+          docker tag ${{ env.ECR_REPOSITORY }}:latest \
+            ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+          docker push ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest
+
+      - name: Force new deployment on ECS service
+        run: |
+          aws ecs update-service \
+            --cluster "${{ env.CLUSTER_NAME }}" \
+            --service "${{ env.SERVICE_NAME }}" \
+            --force-new-deployment
+
+      - name: Verify deployment
+        run: |
+          aws ecs describe-services \
+            --cluster "${{ env.CLUSTER_NAME }}" \
+            --services "${{ env.SERVICE_NAME }}" \
+            --query "services[0].deployments" \
+            --output table

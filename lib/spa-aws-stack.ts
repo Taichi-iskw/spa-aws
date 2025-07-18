@@ -69,8 +69,24 @@ export class SpaAwsStack extends cdk.Stack {
       emptyOnDelete: true,
     });
 
+    // ===== GitHub OIDC for Fargate deploy =====
+    const fargateOidcRole = new iam.Role(this, "GitHubActionsFargateRole", {
+      roleName: "GitHubActionsFargateRole",
+      assumedBy: new iam.WebIdentityPrincipal(oidcProvider.openIdConnectProviderArn, {
+        StringEquals: {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+        },
+        StringLike: {
+          "token.actions.githubusercontent.com:sub": `repo:${githubRepo}:*`,
+        },
+      }),
+      description: "Role for GitHub Actions to deploy to Fargate via OIDC",
+    });
+    repo.grantPullPush(fargateOidcRole);
+    fargateOidcRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonECS_FullAccess"));
+
     // ECS Cluster
-    const cluster = new ecs.Cluster(this, "EcsCluster", { vpc });
+    const cluster = new ecs.Cluster(this, "EcsCluster", { vpc, clusterName: "sample-flask-cluster" });
 
     // Fargate Task Definition
     const taskDef = new ecs.FargateTaskDefinition(this, "TaskDef", {
@@ -85,6 +101,7 @@ export class SpaAwsStack extends cdk.Stack {
 
     // Fargate Service
     const service = new ecs.FargateService(this, "FargateService", {
+      serviceName: "sample-flask-service",
       cluster,
       taskDefinition: taskDef,
       assignPublicIp: true,
