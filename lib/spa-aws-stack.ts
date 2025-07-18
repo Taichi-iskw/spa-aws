@@ -7,6 +7,7 @@ import * as route53 from "aws-cdk-lib/aws-route53";
 import * as route53Targets from "aws-cdk-lib/aws-route53-targets";
 import * as acm from "aws-cdk-lib/aws-certificatemanager";
 import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as iam from "aws-cdk-lib/aws-iam";
 
 import { CognitoAuth } from "./constructs/auth-construct";
 
@@ -20,21 +21,41 @@ export class SpaAwsStack extends cdk.Stack {
     super(scope, id, props);
     const siteDomainName = "spa.iskw-poc.click";
 
-    const auth = new CognitoAuth(this, "CognitoAuth", {
-      domainName: siteDomainName,
-    });
+    // const auth = new CognitoAuth(this, "CognitoAuth", {
+    //   domainName: siteDomainName,
+    // });
 
-    // Create a private S3 bucket for static website hosting
+    // S3 Bucket
     const bucket = new s3.Bucket(this, "SpaAwsBucket", {
       bucketName: "spa-aws-bucket",
-      publicReadAccess: false, // Make bucket private
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL, // Block all public access
-      // TODO: Remove this when we have a proper way to delete the bucket
+      publicReadAccess: false,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,
     });
-
     const s3Origin = origins.S3BucketOrigin.withOriginAccessControl(bucket);
+
+    // iam
+    const oidcProvider = iam.OpenIdConnectProvider.fromOpenIdConnectProviderArn(
+      this,
+      "OIDCProvider",
+      `arn:aws:iam::${cdk.Stack.of(this).account}:oidc-provider/token.actions.githubusercontent.com`
+    );
+    const githubRepo = "Taichi-iskw/spa-aws";
+    const githubOidcRole = new iam.Role(this, "GitHubActionsOIDCRole", {
+      roleName: "GitHubActionsOIDCRole",
+      assumedBy: new iam.WebIdentityPrincipal(oidcProvider.openIdConnectProviderArn, {
+        StringEquals: {
+          ["token.actions.githubusercontent.com:aud"]: "sts.amazonaws.com",
+        },
+        StringLike: {
+          "token.actions.githubusercontent.com:sub": `repo:${githubRepo}:*`,
+        },
+      }),
+      description: "Role for GitHub Actions to upload to S3 via OIDC",
+    });
+    // stringLike: { "token.actions.githubusercontent.com:sub": `repo:${githubRepo}:*` },
+    bucket.grantPut(githubOidcRole);
 
     // Create CloudFront distribution with OAC
     const distribution = new cloudfront.Distribution(this, "SpaAwsDistribution", {
